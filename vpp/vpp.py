@@ -1,4 +1,5 @@
 from gi.repository import Gtk
+import os.path
 
 
 class DemoHandler:
@@ -46,7 +47,9 @@ def populate_printer_list(builder):
 
 def gui_main(*args):
     builder = Gtk.Builder()
-    builder.add_from_file("printdialog.glade")
+    glade_path = os.path.abspath(
+        os.path.join(__file__, "..", "print_dialog.glade"))
+    builder.add_from_file(glade_path)
     builder.connect_signals(DemoHandler())
 
     window = builder.get_object("smoke_and_mirrors")
