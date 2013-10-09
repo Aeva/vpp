@@ -35,17 +35,30 @@ class PrinterWrapper(PrinterInterface):
                 "Nozzle: {0}, Bed: {1}".format(
                     tool[0], bed[0]))
 
+    def warm_up(self):
+        self.home()
+        self.motors_off()
+        self.set_tool_temp(0, 190)
+        self.set_bed_temp(45)
+
+    def cool_down(self):
+        self.home(True, False, False)
+        self.motors_off()
+        self.set_tool_temp(0, 0)
+        self.set_bed_temp(0)
+
     def connect(self, heater_bar, progress_bar):
         self.heater_bar = heater_bar
         self.progress_bar = progress_bar
 
     def on_pdq_print_progress(self, progress):
-        print "OMG PROGRESS", progress
+        self.progress_bar.set_fraction(float(progress)/100.0)
 
     def on_pdq_print_complete(self):
         # finally!
-        print "OMG job complete!!!!!!!!"
-        Gtk.main_quit(*args)
+        self.progress_bar.set_fraction(1.0)
+        self.cool_down()
+        #Gtk.main_quit(*args)
     
 
 class DemoHandler(SwitchBoard):
@@ -57,28 +70,16 @@ class DemoHandler(SwitchBoard):
         self.output_path = None
         SwitchBoard.__init__(self, PrinterWrapper)
 
-    def warm_up(self):
-        self.printer.home()
-        self.printer.motors_off()
-        self.printer.set_tool_temp(0, 190)
-        self.printer.set_bed_temp(45)
-
-    def cool_down(self):
-        self.printer.home(True, False, False)
-        self.printer.motors_off()
-        self.printer.set_tool_temp(0, 0)
-        self.printer.set_bed_temp(0)
-
     def on_new_printer(self, printer):
         if not self.printer:
             print "Connected printer: %s" % printer.uuid
             heater_bar = self.builder.get_object("heater_progress")
-            progress_bar = self.builder.get_object("print_progress")
+            progress_bar = self.builder.get_object("job_progress")
             self.printer = printer
             self.printer.connect(heater_bar, progress_bar)
             self.printer.motors_off()
             if self.print_started:
-                self.warm_up()
+                self.printer.warm_up()
                 if self.job_ready:
                     self.start_print()
 
@@ -122,7 +123,7 @@ class DemoHandler(SwitchBoard):
         pdq_print_job(*print_args)
 
         # warm up printer
-        self.warm_up()
+        self.printer.warm_up()
 
     def onStopJob(self, *args):
         Gtk.main_quit(*args)
