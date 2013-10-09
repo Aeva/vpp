@@ -5,7 +5,7 @@ from subprocess import Popen, PIPE, STDOUT
 
 
 SLICER = "/home/aeva/repraps/slic3r/bin/slic3r"
-CONFIG = "/home/aeva/repraps/configs/ao_mod/hairspray_translucent_pla.ini"
+CONFIG = "/home/aeva/repraps/configs/ao_mod/hairspray_fine_solid_black_pla.ini"
 SOURCE = "/home/aeva/library/models/calibration/hollow_cube.stl"
 
 
