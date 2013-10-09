@@ -50,8 +50,8 @@ class DemoHandler(SwitchBoard):
     def warm_up(self):
         self.printer.home()
         self.printer.motors_off()
-        self.printer.set_tool_temp(0, 200)
-        self.printer.set_bed_temp(100)
+        self.printer.set_tool_temp(0, 190)
+        self.printer.set_bed_temp(45)
 
     def cool_down(self):
         self.printer.home(True, False, False)
