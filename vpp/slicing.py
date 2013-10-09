@@ -25,6 +25,7 @@ class Slic3rListener(Thread):
     def run(self):
         args = (SLICER, "--load", self.config_path, self.model_path)
         proc = Popen(args, stdout=PIPE, stderr=STDOUT)
+        # this list is derrived from Slic3r/lib/Slic3r/Print.pm
         labels = [
             "Processing triangulated mesh",
             "Simplifying input",
@@ -35,29 +36,32 @@ class Slic3rListener(Thread):
             "Generating horizontal shells",
             "Combining infill",
             "Infilling layers",
+            "Generating support material",
             "Generating skirt",
             "Exporting G-code",
+            "Running post-processing scripts",
             ]
-        count = -1
         complete = False
+
+        def get_step(line):
+            #hack :P
+            for label in labels:
+                if line.startswith(label):
+                    return labels.index(label)
+            print "ERRROR", line
 
         while proc.poll() is None:
             line = proc.stdout.readline().strip()
-            count += 1
-            percent = 100/(len(labels))*count
             print line
-
-            if count < len(labels):
-                self.status_bar.set_text(labels[count])
-
-            if line.startswith("Done") or complete:
+            if line.startswith("Done."):
                 self.status_bar.set_text("Complete")
+                self.status_bar.set_fraction(100.0)
                 complete = True
-                percent = 100
-
-            self.status_bar.set_fraction(percent/100.0)
-
-
+            elif not complete:
+                step = get_step(line[3:])
+                percent = 100/(len(labels)+1)*step
+                self.status_bar.set_text(labels[step])
+                self.status_bar.set_fraction(percent/100.0)
             time.sleep(.01)
 
 
