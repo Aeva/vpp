@@ -39,12 +39,21 @@ class PrinterWrapper(PrinterInterface):
         self.heater_bar = heater_bar
         self.progress_bar = progress_bar
 
+    def on_pdq_print_progress(self, progress):
+        print "OMG PROGRESS", progress
+
+    def on_pdq_print_complete(self):
+        # finally!
+        print "OMG job complete!!!!!!!!"
+        Gtk.main_quit(*args)
+    
 
 class DemoHandler(SwitchBoard):
     def __init__(self, builder):
         self.builder = builder
         self.printer = None
         self.print_started = False
+        self.job_ready = False
         self.output_path = None
         SwitchBoard.__init__(self, PrinterWrapper)
 
@@ -70,9 +79,11 @@ class DemoHandler(SwitchBoard):
             self.printer.motors_off()
             if self.print_started:
                 self.warm_up()
+                if self.job_ready:
+                    self.start_print()
 
     def start_print(self):
-        print "TODO: send to switchprint:", self.output_path
+        self.printer.pdq_request_print(self.output_path)
                 
     def onDeleteWindow(self, *args):
         #Gtk.main_quit(*args)
@@ -96,7 +107,9 @@ class DemoHandler(SwitchBoard):
             self.output_path = output_path
             def callback():
                 # called by main thread
-                self.start_print()
+                self.job_ready = True
+                if self.printer:
+                    self.start_print()
                 return False # ensures this is only scheduled once
             GObject.idle_add(callback)
 
