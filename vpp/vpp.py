@@ -2,7 +2,7 @@
 import sys
 import os.path
 import json
-from gi.repository import Gtk
+from gi.repository import Gtk, GObject
 from dbus.mainloop.glib import DBusGMainLoop
 from switchprint.switch_board import SwitchBoard
 from switchprint.printer_interface import PrinterInterface
@@ -45,6 +45,7 @@ class DemoHandler(SwitchBoard):
         self.builder = builder
         self.printer = None
         self.print_started = False
+        self.output_path = None
         SwitchBoard.__init__(self, PrinterWrapper)
 
     def warm_up(self):
@@ -69,6 +70,9 @@ class DemoHandler(SwitchBoard):
             self.printer.motors_off()
             if self.print_started:
                 self.warm_up()
+
+    def start_print(self):
+        print "TODO: send to switchprint:", self.output_path
                 
     def onDeleteWindow(self, *args):
         #Gtk.main_quit(*args)
@@ -87,7 +91,17 @@ class DemoHandler(SwitchBoard):
         settings.destroy()
         progress.show_all()
 
-        print_args = [status_bar]
+        def on_slice_complete(output_path):
+            # called by slic3r thread
+            self.output_path = output_path
+            def callback():
+                # called by main thread
+                self.start_print()
+                return False # ensures this is only scheduled once
+            GObject.idle_add(callback)
+
+
+        print_args = [on_slice_complete, status_bar]
         if len(sys.argv) == 2:
             print_args.append(sys.argv[1])
 
@@ -96,7 +110,6 @@ class DemoHandler(SwitchBoard):
 
         # warm up printer
         self.warm_up()
-
 
     def onStopJob(self, *args):
         Gtk.main_quit(*args)

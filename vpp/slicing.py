@@ -10,13 +10,14 @@ SOURCE = "/home/aeva/library/models/calibration/hollow_cube.stl"
 
 
 class Slic3rListener(Thread):
-    def __init__(self, status_bar, model_path, config_path):
+    def __init__(self, callback, status_bar, model_path, config_path):
         """
         Seems silly to wrap a subprocess with a thread, but the purpose is
         here is to listen for when slic3r finishes various stages of
         the slicing process so that it may trigger gtk events etc.
         """
 
+        self.callback = callback
         self.model_path = model_path
         self.config_path = config_path
         self.status_bar = status_bar
@@ -50,6 +51,8 @@ class Slic3rListener(Thread):
                     return labels.index(label)
             print "ERRROR", line
 
+        output_file = None
+
         while proc.poll() is None:
             line = proc.stdout.readline().strip()
             print line
@@ -59,14 +62,18 @@ class Slic3rListener(Thread):
                 complete = True
             elif not complete:
                 step = get_step(line[3:])
+                if labels[step] == "Exporting G-code":
+                    chaf, path = line.split("Exporting G-code to")
+                    output_file = path.strip()
                 percent = 100/(len(labels)+1)*step
                 self.status_bar.set_text(labels[step])
                 self.status_bar.set_fraction(percent/100.0)
             time.sleep(.01)
+        if self.callback:
+            self.callback(output_file)
 
 
-
-def pdq_print_job(status_bar, source=SOURCE, config=CONFIG):
-    slic3r = Slic3rListener(status_bar, source, config)
+def pdq_print_job(callback, status_bar, source=SOURCE, config=CONFIG):
+    slic3r = Slic3rListener(callback, status_bar, source, config)
     slic3r.start()
 
