@@ -1,11 +1,12 @@
 
 import time
+import os.path
 from threading import Thread
 from subprocess import Popen, PIPE, STDOUT
 
 
 SLICER = "/home/aeva/repraps/slic3r/bin/slic3r"
-CONFIG = "/home/aeva/repraps/configs/ao_mod/hairspray_fine_solid_black_pla.ini"
+CONFIG = "/home/aeva/repraps/configs/taz_one/35nzl_draft.ini"
 SOURCE = "/home/aeva/library/models/calibration/hollow_cube.stl"
 
 
@@ -18,8 +19,8 @@ class Slic3rListener(Thread):
         """
 
         self.callback = callback
-        self.model_path = model_path
-        self.config_path = config_path
+        self.model_path = os.path.abspath(model_path)
+        self.config_path = os.path.abspath(config_path)
         self.status_bar = status_bar
         Thread.__init__(self)
 

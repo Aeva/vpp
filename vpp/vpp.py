@@ -22,9 +22,12 @@ class PrinterWrapper(PrinterInterface):
     def on_report(self, blob):
         data = json.loads(blob)
 
-        def get_fraction(reading, thermistor):
+        def get_fraction(reading, thermistor, guess=False):
             # also saves the fractional values for use elsewhere
             value, target = reading
+            if guess and target is None:
+                # HACK!
+                target = 230
             if target is None:
                 self.temps[thermistor] = None
                 return 0.0
@@ -35,7 +38,7 @@ class PrinterWrapper(PrinterInterface):
 
         tool_data = data["thermistors"]["tools"][0]
         bed_data = data["thermistors"]["bed"]
-        tool = get_fraction(tool_data, "tool")
+        tool = get_fraction(tool_data, "tool", True)
         bed = get_fraction(bed_data, "bed")
 
         combined = tool
@@ -62,7 +65,7 @@ class PrinterWrapper(PrinterInterface):
     def warm_up(self):
         self.home()
         self.motors_off()
-        self.set_tool_temp(0, 190)
+        self.set_tool_temp(0, 230)
         self.set_bed_temp(45)
 
     def cool_down(self):
